@@ -4,6 +4,7 @@ import database.Column.*;
 
 import java.util.*;
 
+
 /**
  * Шаблон описания создаваемой/считываемой таблицы
  */
@@ -25,36 +26,30 @@ public class Table {
     /**
      * Содержимое таблицы
      */
-    protected List<ContentValues> contentValues;
+    protected final List<ContentValues> contentValues = new LinkedList<>();
 
     /**
      * Список столбцов
      */
-    protected List<TableColumn> columns;
+    protected final List<TableColumn> columns = new LinkedList<>();
 
     /**
      * Список столбцов для ограничения UNIQUE
      */
-    protected List<TableColumn> uniqueColumns;
+    protected final List<TableColumn> uniqueColumns = new LinkedList<>();
 
     /**
      * Список столбцов для ограничения NOT NULL
      */
-    protected List<TableColumn> notNullColumns;
+    protected final List<TableColumn> notNullColumns = new LinkedList<>();
 
     /**
      * Список для ограничения FOREIGN KEY
      * Ключом является колонка текущей таблицы, значение - внешняя таблица
      */
-    protected Map<TableColumn, TableColumn> foreignKeysColumns;
+    protected final Map<TableColumn, TableColumn> foreignKeysColumns = new HashMap<>();
 
-    public Table() {
-        columns = new LinkedList<>();
-        notNullColumns = new LinkedList<>();
-        uniqueColumns = new LinkedList<>();
-        foreignKeysColumns = new HashMap<>();
-        contentValues = new LinkedList<>();
-    }
+    public Table() {  }
 
     /**
      * Функция отвечает за добавление новой колонки в описание таблицы.
@@ -66,9 +61,7 @@ public class Table {
         boolean res = false;
         boolean colPresent = columns
                 .stream()
-                .filter(column1 -> column1.getName().equals(column.getName()))
-                .findAny()
-                .isPresent();
+                .anyMatch(column1 -> column1.getName().equals(column.getName()));
         if (!colPresent) {
             columns.add(column);
             column.setTable(this);
@@ -174,8 +167,8 @@ public class Table {
     /**
      * @return колонка - первичный ключ.
      */
-    public PrimaryKey getPrimaryKeyColumn() {
-        return (PrimaryKey) (columns.stream().filter(column -> column instanceof PrimaryKey).findFirst().get());
+    public PrimaryKeyColumn getPrimaryKeyColumn() {
+        return (PrimaryKeyColumn) (columns.stream().filter(column -> column instanceof PrimaryKeyColumn).findFirst().get());
     }
 
     /**

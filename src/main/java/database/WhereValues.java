@@ -1,9 +1,8 @@
 package database;
 
-
-import database.Column.Autoincrement;
+import database.Column.AutoincrementColumn;
 import database.Column.ForeignKey;
-import database.Column.PrimaryKey;
+import database.Column.PrimaryKeyColumn;
 import database.Column.TableColumn;
 
 import java.util.HashMap;
@@ -28,7 +27,7 @@ public class WhereValues extends HashMap<TableColumn, Object> {
 
                 if(foreignKey != null) {
                     String subreqTemplate = "(select `%1s` from `%2s` where %3s)";
-                    if (foreignKey instanceof Autoincrement) {
+                    if (foreignKey instanceof AutoincrementColumn) {
                         //Внешний ключ ссылается на автоинкрементируемый первичный ключ внешней таблицы
                         /*Формируем подзапрос следующего вида
                          * select id from fkTable where "все колонки кроме id" = value
@@ -37,7 +36,7 @@ public class WhereValues extends HashMap<TableColumn, Object> {
 
                         List<TableColumn> collect = foreignKey.getTable().getColumns()
                                 .stream()
-                                .filter(column1 -> !(column1 instanceof PrimaryKey))
+                                .filter(column1 -> !(column1 instanceof PrimaryKeyColumn))
                                 .collect(Collectors.toList());
 
                         StringBuilder whereSubrequesResult = new StringBuilder("");

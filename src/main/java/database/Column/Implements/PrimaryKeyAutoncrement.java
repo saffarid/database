@@ -1,14 +1,13 @@
 package database.Column.Implements;
 
-import database.Column.Autoincrement;
+import database.Column.AutoincrementColumn;
 import database.Column.DataTypes;
-import database.Column.PrimaryKey;
+import database.Column.PrimaryKeyColumn;
 import database.Column.TableColumn;
-import database.Exceptions.NotSupportedOperation;
 
 public class PrimaryKeyAutoncrement
         extends Column
-        implements PrimaryKey, Autoincrement {
+        implements PrimaryKeyColumn, AutoincrementColumn {
 
     private final String templateForCreate = "`%1s` %2s primary key autoincrement";
 
@@ -18,13 +17,13 @@ public class PrimaryKeyAutoncrement
     }
 
     @Override
-    public TableColumn setName(String name) throws NotSupportedOperation {
-        throw new NotSupportedOperation();
+    public TableColumn setName(String name) throws UnsupportedOperationException {
+        throw new UnsupportedOperationException();
     }
 
     @Override
-    public TableColumn setType(DataTypes type) throws NotSupportedOperation {
-        throw new NotSupportedOperation();
+    public TableColumn setType(DataTypes type) throws UnsupportedOperationException {
+        throw new UnsupportedOperationException();
     }
 
     @Override

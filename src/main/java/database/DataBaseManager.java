@@ -9,15 +9,11 @@ import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Logger;
 
+
 public class DataBaseManager {
 
-    private static Logger LOG;
     private static DataBaseManager dbManager;
     private Map<File, Connection> conns;
-
-    static {
-        LOG = Logger.getLogger(DataBaseManager.class.getName());
-    }
 
     public DataBaseManager() throws SQLException, ClassNotFoundException {
         conns = new HashMap<>();

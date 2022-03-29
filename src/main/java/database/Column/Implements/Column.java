@@ -2,7 +2,6 @@ package database.Column.Implements;
 
 import database.Column.DataTypes;
 import database.Column.TableColumn;
-import database.Exceptions.NotSupportedOperation;
 import database.Table;
 
 public abstract class Column
@@ -30,7 +29,7 @@ implements TableColumn {
     }
 
     @Override
-    public TableColumn setName(String name) throws NotSupportedOperation {
+    public TableColumn setName(String name) throws UnsupportedOperationException {
         this.name = name;
         return this;
     }
@@ -41,7 +40,7 @@ implements TableColumn {
     }
 
     @Override
-    public TableColumn setType(DataTypes type) throws NotSupportedOperation{
+    public TableColumn setType(DataTypes type) throws UnsupportedOperationException{
         this.type = type;
         return this;
     }

@@ -1,11 +1,11 @@
 package database.Column.Implements;
 
 import database.Column.DataTypes;
-import database.Column.PrimaryKey;
+import database.Column.PrimaryKeyColumn;
 
 public class PrimaryKeyCustom
         extends Column
-        implements PrimaryKey {
+        implements PrimaryKeyColumn {
 
     private String templateForCreate = "`%1s` %2s primary key";
 

@@ -9,11 +9,9 @@ public abstract class DataBaseSQL {
     /**
      * Список таблиц
      * */
-    protected List<Table> tables;
+    protected final List<Table> tables = new LinkedList<>();
 
-    public DataBaseSQL() {
-        tables = new LinkedList<>();
-    }
+    public DataBaseSQL() {  }
 
     /**
      * @param name наименование таблицы.

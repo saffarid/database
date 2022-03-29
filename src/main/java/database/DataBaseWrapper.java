@@ -1,8 +1,8 @@
 package database;
 
-import database.Column.Autoincrement;
+import database.Column.AutoincrementColumn;
 import database.Column.ForeignKey;
-import database.Column.PrimaryKey;
+import database.Column.PrimaryKeyColumn;
 import database.Column.TableColumn;
 
 import java.io.File;
@@ -348,7 +348,7 @@ public class DataBaseWrapper {
                 }
                 TableColumn fkTableColId = foreignKeyTable.getPrimaryKeyColumn();
                 //Ветка выполняется при наличии ссылки на внешнюю таблицу
-                if (foreignKeyColumn instanceof Autoincrement) {
+                if (foreignKeyColumn instanceof AutoincrementColumn) {
                     //Внешний ключ ссылается на автоинкрементируемый первичный ключ внешней таблицы
                     /*Формируем подзапрос следующего вида
                      * select "выбираем все колонки внешней таблицы кроме ID" from fkTable where fk.id = fk_id
@@ -356,7 +356,7 @@ public class DataBaseWrapper {
                     //Определяем колонки для вывода информации
                     List<TableColumn> collect = foreignKeyTable.getColumns()
                             .stream()
-                            .filter(column1 -> !(column1 instanceof PrimaryKey))
+                            .filter(column1 -> !(column1 instanceof PrimaryKeyColumn))
                             .collect(Collectors.toList());
 
                     //Формируем подзапрос для каждого столбца

@@ -1,8 +1,8 @@
 package database;
 
-import database.Column.Autoincrement;
+import database.Column.AutoincrementColumn;
 import database.Column.ForeignKey;
-import database.Column.PrimaryKey;
+import database.Column.PrimaryKeyColumn;
 import database.Column.TableColumn;
 
 import java.util.HashMap;
@@ -76,7 +76,7 @@ public class ContentValues extends HashMap<TableColumn, Object> {
                             ? ("`%1$s` = \'%2$s\'")
                             : ("`%1$s` = %2$s");
             StringBuilder whereBuilder = new StringBuilder("");
-            if (foreignKey instanceof Autoincrement) {
+            if (foreignKey instanceof AutoincrementColumn) {
                 //Обработка случая, когда внешний ключ ссылается на первичный автоинкрементируемый ключ внешней таблицы
                 /*
                  * Формируем подзапрос select ID from `внешняя таблица` where columnName = columnValue.
@@ -88,7 +88,7 @@ public class ContentValues extends HashMap<TableColumn, Object> {
                         .getTable()
                         .getColumns()
                         .stream()
-                        .filter(col -> !(col instanceof PrimaryKey))
+                        .filter(col -> !(col instanceof PrimaryKeyColumn))
                         .collect(Collectors.toList());
                 /*Формируем блок Where.
                 * Логика формирования блока colName1 = value or colName2 = value or colName3 = value.*/
