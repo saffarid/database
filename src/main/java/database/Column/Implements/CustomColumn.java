@@ -3,24 +3,24 @@ package database.Column.Implements;
 import database.Column.TableColumn;
 
 public class CustomColumn
-    extends Column
+        extends Column
         implements database.Column.CustomColumn {
 
     private final String templateForCreate = "`%1s` %2s%3s";
 
     /**
      * Уникальность значений в каждой записи данного столбца
-     * */
+     */
     protected boolean isUnique;
 
     /**
      * Возможность записи пустых значений
-     * */
+     */
     protected boolean isNotNull;
 
     /**
      * Колонка внешней таблицы, на которую ссылается внешний ключ
-     * */
+     */
     protected TableColumn foreignKey;
 
     public CustomColumn() {
@@ -74,7 +74,7 @@ public class CustomColumn
         return String.format(templateForCreate
                 , name
                 , type.getDataType()
-                , isNotNull?" not null":""
+                , isNotNull ? " not null" : ""
 //                , isUnique?" unique":""
         );
     }
