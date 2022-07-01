@@ -11,7 +11,7 @@ import java.util.*;
 public class Table {
 
     private final String UNIQ_CONSTR = "constraint `%1s_%2s_uniq` unique(%3s)";
-    private final String FK_CONSTR = "constraint `%1s_%2s_fk` foreign key (%3s) references `%4s` (%5s)";
+    private final String FK_CONSTR   = "constraint `%1s_%2s_fk` foreign key (%3s) references `%4s` (%5s)";
 
     /**
      * Наименование таблицы
@@ -49,12 +49,14 @@ public class Table {
      */
     protected final Map<TableColumn, TableColumn> foreignKeysColumns = new HashMap<>();
 
-    public Table() {  }
+    public Table() {
+    }
 
     /**
      * Функция отвечает за добавление новой колонки в описание таблицы.
      *
      * @param column новая колонка.
+     *
      * @return true - если колонка добавлена.
      */
     public boolean addColumn(TableColumn column) {
@@ -69,14 +71,19 @@ public class Table {
         }
 
         if (column instanceof NotNull) {
-            if (((NotNull) column).isNotNull() && !notNullColumns.contains(column)) notNullColumns.add(column);
+            if (((NotNull) column).isNotNull() && !notNullColumns.contains(column)) {
+                notNullColumns.add(column);
+            }
         }
         if (column instanceof Unique) {
-            if (((Unique) column).isUnique() && !uniqueColumns.contains(column)) uniqueColumns.add(column);
+            if (((Unique) column).isUnique() && !uniqueColumns.contains(column)) {
+                uniqueColumns.add(column);
+            }
         }
         if (column instanceof ForeignKey) {
-            if (((ForeignKey) column).getForeignKey() != null)
+            if (((ForeignKey) column).getForeignKey() != null) {
                 foreignKeysColumns.put(column, ((ForeignKey) column).getForeignKey());
+            }
         }
 
         return res;
@@ -96,8 +103,8 @@ public class Table {
         }
 
         for (ContentValues row : copyTable.getContentValues()) {
-            LinkedList<TableColumn> tableColumns = new LinkedList<TableColumn>(row.keySet());
-            ContentValues copiedRow = new ContentValues();
+            LinkedList<TableColumn> tableColumns = new LinkedList<>(row.keySet());
+            ContentValues           copiedRow    = new ContentValues();
 
             for (TableColumn tableColumn : tableColumns) {
                 copiedRow.put(getColumnByName(tableColumn.getName()), row.get(tableColumn));
@@ -125,14 +132,14 @@ public class Table {
                 String foreignKeyPrimaryKey = foreignKeyTable.getPrimaryKeyColumn().getName();
 
                 res.append(String.format(
-                        FK_CONSTR,
-                        name,                                   //1
-                        foreignKeyTable.getName(),              //2
-                        "`" + column.getName() + "`",           //3
-                        foreignKeyTable.getName(),              //4
-                        "`" + foreignKeyPrimaryKey + "`"        //5
-                        )
-                );
+                                   FK_CONSTR,
+                                   name,                                   //1
+                                   foreignKeyTable.getName(),              //2
+                                   "`" + column.getName() + "`",           //3
+                                   foreignKeyTable.getName(),              //4
+                                   "`" + foreignKeyPrimaryKey + "`"        //5
+                                        )
+                          );
 
                 if (tableColumns.indexOf(column) != tableColumns.size() - 1) {
                     res.append(", \n\t");
@@ -144,11 +151,16 @@ public class Table {
 
     /**
      * @return строка со всеми именовынными ограничениями по уникальности
-     * */
+     */
     public String getConstrainsUnique() {
         StringBuilder res = new StringBuilder("");
         for (TableColumn column : uniqueColumns) {
-            res.append(String.format(UNIQ_CONSTR, this.name, column.getName().trim(), "`" + column.getName().trim() + "`"));
+            res.append(String.format(
+                    UNIQ_CONSTR,
+                    this.name,
+                    column.getName().trim(),
+                    "`" + column.getName().trim() + "`"
+                                    ));
             if (uniqueColumns.indexOf(column) != uniqueColumns.size() - 1) {
                 res.append(", \n\t");
             }
@@ -168,7 +180,10 @@ public class Table {
      * @return колонка - первичный ключ.
      */
     public PrimaryKeyColumn getPrimaryKeyColumn() {
-        return (PrimaryKeyColumn) (columns.stream().filter(column -> column instanceof PrimaryKeyColumn).findFirst().get());
+        return (PrimaryKeyColumn) (columns.stream()
+                                          .filter(column -> column instanceof PrimaryKeyColumn)
+                                          .findFirst()
+                                          .get());
     }
 
     /**
@@ -178,14 +193,18 @@ public class Table {
         return getColumnByName(this, colName);
     }
 
-    public TableColumn getColumnByName(Table table, String colName) {
+    public TableColumn getColumnByName(
+            Table table,
+            String colName
+                                      ) {
         Optional<TableColumn> first = table.getColumns()
-                .stream()
-                .filter(column -> column.getName().equals(colName))
-                .findFirst();
+                                           .stream()
+                                           .filter(column -> column.getName().equals(colName))
+                                           .findFirst();
         if (first.isPresent()) {
             return first.get();
-        } else {
+        }
+        else {
             return null;
         }
     }
@@ -211,10 +230,14 @@ public class Table {
         }
 
         if (column instanceof NotNull) {
-            if (((NotNull) column).isNotNull() && notNullColumns.contains(column)) notNullColumns.remove(column);
+            if (((NotNull) column).isNotNull() && notNullColumns.contains(column)) {
+                notNullColumns.remove(column);
+            }
         }
         if (column instanceof Unique) {
-            if (((Unique) column).isUnique() && uniqueColumns.contains(column)) uniqueColumns.remove(column);
+            if (((Unique) column).isUnique() && uniqueColumns.contains(column)) {
+                uniqueColumns.remove(column);
+            }
         }
 
         return res;

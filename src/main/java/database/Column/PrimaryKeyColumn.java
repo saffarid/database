@@ -1,4 +1,8 @@
 package database.Column;
 
-public interface PrimaryKeyColumn extends TableColumn{
+/**
+ * Интерфейс сообщает системе о том, что реализующая его колонка является первичным ключом с произвольным идентификатором
+ * */
+public interface PrimaryKeyColumn
+        extends TableColumn {
 }

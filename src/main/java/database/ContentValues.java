@@ -10,7 +10,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class ContentValues extends HashMap<TableColumn, Object> {
+public class ContentValues
+        extends HashMap<TableColumn, Object> {
 
     private final String TEMPLATE_COMAND_INSERT = "(\n\t%1$s\n) values (\n\t%2$s)";
     private final String TEMPLATE_COMAND_UPDATE = "`%1$s`=%2$s\n";
@@ -19,11 +20,11 @@ public class ContentValues extends HashMap<TableColumn, Object> {
      * Преобразование объекта в строку при создании таблицы в БД
      */
     public String toStringInsert() {
-        StringBuilder colName = new StringBuilder("");
+        StringBuilder colName  = new StringBuilder("");
         StringBuilder colValue = new StringBuilder("");
 
         String strColNameTemplate = "`%1$s`";
-        String strColValTemplate = "\'%1$s\'";
+        String strColValTemplate  = "\'%1$s\'";
 
         List<TableColumn> columns = new LinkedList<>(keySet());
         //Отфильтруем все значения по null
@@ -34,22 +35,24 @@ public class ContentValues extends HashMap<TableColumn, Object> {
             //Проверяем TableColumn на наличие внешнего ключа
             Object value = get(column);
 
-            if (column instanceof ForeignKey && ((ForeignKey)column).hasForeignKey()) {
+            if (column instanceof ForeignKey && ((ForeignKey) column).hasForeignKey()) {
                 //Колонка содержит внешний ключ
-                colValue.append( getValueSubrequest( (ForeignKey) column, value ) );
-            } else {
+                colValue.append(getValueSubrequest((ForeignKey) column, value));
+            }
+            else {
                 //Колонка не содержит внешний ключ
                 if (value instanceof String) {
                     colValue.append(
                             String.format(strColValTemplate, value)
-                    );
-                } else {
+                                   );
+                }
+                else {
                     colValue.append(value);
                 }
             }
             colName.append(
                     String.format(strColNameTemplate, column.getName())
-            );
+                          );
             if (columns.indexOf(column) != (columns.size() - 1)) {
                 colName.append(", \n\t");
                 colValue.append(", \n\t");
@@ -63,7 +66,10 @@ public class ContentValues extends HashMap<TableColumn, Object> {
     /**
      * Функция формирует строки подзапросов для использования в блоке values запроса Insert
      */
-    private String getValueSubrequest(ForeignKey column, Object value) {
+    private String getValueSubrequest(
+            ForeignKey column,
+            Object value
+                                     ) {
         TableColumn foreignKey = column.getForeignKey();
         //Если внешний ключ установлен, объект не будет равен null
         if (foreignKey != null) {
@@ -73,8 +79,8 @@ public class ContentValues extends HashMap<TableColumn, Object> {
             String subRequestTemplate = "(select `%1$s` from `%2$s` where %3$s)";
             String whereTempalte =
                     (value instanceof String)
-                            ? ("`%1$s` = \'%2$s\'")
-                            : ("`%1$s` = %2$s");
+                    ? ("`%1$s` = \'%2$s\'")
+                    : ("`%1$s` = %2$s");
             StringBuilder whereBuilder = new StringBuilder("");
             if (foreignKey instanceof AutoincrementColumn) {
                 //Обработка случая, когда внешний ключ ссылается на первичный автоинкрементируемый ключ внешней таблицы
@@ -91,11 +97,11 @@ public class ContentValues extends HashMap<TableColumn, Object> {
                         .filter(col -> !(col instanceof PrimaryKeyColumn))
                         .collect(Collectors.toList());
                 /*Формируем блок Where.
-                * Логика формирования блока colName1 = value or colName2 = value or colName3 = value.*/
+                 * Логика формирования блока colName1 = value or colName2 = value or colName3 = value.*/
                 for (TableColumn col : collect) {
                     whereBuilder.append(
                             String.format(whereTempalte, col.getName().trim(), value.toString().trim())
-                    );
+                                       );
                     if (collect.indexOf(col) != collect.size() - 1) {
                         whereBuilder.append(" or ");
                     }
@@ -107,10 +113,11 @@ public class ContentValues extends HashMap<TableColumn, Object> {
                         foreignKey.getName(),   //1
                         foreignKey.getTable().getName(),     //2
                         whereBuilder.toString()
-                );
+                                    );
 
 //                colValue.append("(" + subRequest + ")");
-            } else {
+            }
+            else {
                 //Обработка подзапроса если есть информация, какой столбец интересует внешний ключ
                 //foreignKey - представляет столбец в котором ищем информацию для определения идентификатора
                 Table tableParent = foreignKey.getTable();
@@ -119,7 +126,7 @@ public class ContentValues extends HashMap<TableColumn, Object> {
                         tableParent.getPrimaryKeyColumn().getName(),   //1
                         tableParent.getName(),     //2
                         String.format(whereTempalte, foreignKey.getName().trim(), value.toString().trim())
-                );
+                                    );
 //                colValue.append("(" + subRequest + ")");
             }
         }
@@ -136,19 +143,25 @@ public class ContentValues extends HashMap<TableColumn, Object> {
         //Отфильтруем все значения по null
         columns = columns.stream().filter(column -> get(column) != null).collect(Collectors.toList());
 
-        for( TableColumn column : columns ){
+        for (TableColumn column : columns) {
 
             Object value = get(column);
 
-            if(column instanceof ForeignKey && ((ForeignKey)column).hasForeignKey()){
+            if (column instanceof ForeignKey && ((ForeignKey) column).hasForeignKey()) {
 
-                res.append(String.format(TEMPLATE_COMAND_UPDATE, column.getName(), getValueSubrequest((ForeignKey) column, value) ) );
+                res.append(String.format(
+                        TEMPLATE_COMAND_UPDATE,
+                        column.getName(),
+                        getValueSubrequest((ForeignKey) column, value)
+                                        ));
 
-            } else {
+            }
+            else {
 
-                if(value instanceof String){
+                if (value instanceof String) {
                     res.append(String.format(TEMPLATE_COMAND_UPDATE, column.getName(), "\'" + value.toString() + "\'"));
-                }else{
+                }
+                else {
                     res.append(String.format(TEMPLATE_COMAND_UPDATE, column.getName(), value.toString()));
                 }
 

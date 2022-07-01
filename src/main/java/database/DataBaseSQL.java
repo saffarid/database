@@ -4,6 +4,10 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Класс является Java-представлением базы данных.
+ * Таблицы представляются связным списком
+ * */
 public abstract class DataBaseSQL {
 
     /**
@@ -23,8 +27,7 @@ public abstract class DataBaseSQL {
                 .stream()
                 .filter(table -> table.getName().equals(name))
                 .findFirst();
-        if(first.isPresent()) return first.get();
-        else return null;
+        return first.orElse(null);
     }
 
     public List<Table> getTables() {

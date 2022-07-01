@@ -1,9 +1,14 @@
 package database.Column;
 
-public interface ForeignKey extends TableColumn{
+/**
+ * Интерфейс сообщает системе о том, что реализующая его колонка может поддерживать внешнюю ссылку.
+ * */
+public interface ForeignKey
+        extends TableColumn {
 
     TableColumn getForeignKey();
-    boolean hasForeignKey();
-    TableColumn setForeignKey(TableColumn fkColumn);
 
+    boolean hasForeignKey();
+
+    TableColumn setForeignKey(TableColumn fkColumn);
 }
