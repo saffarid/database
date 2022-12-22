@@ -4,9 +4,17 @@ import database.Column.TableColumn;
 
 public class CustomColumn
         extends Column
-        implements database.Column.CustomColumn {
+        implements database.Column.atributes.CustomColumn {
 
-    private final String templateForCreate = "`%1s` %2s%3s";
+    /**
+     * Шаблон строки объявления колонки и её атрибутов при создании таблицы
+     * <ul style="list-style-type: decimal">
+     *     <li>Наименование колонки</li>
+     *     <li>Тип колонки</li>
+     *     <li>Атрибут NotNull</li>
+     * </ul>
+     * */
+    private final String templateForCreate = "`%1$s` %2$s%3$s";
 
     /**
      * Уникальность значений в каждой записи данного столбца

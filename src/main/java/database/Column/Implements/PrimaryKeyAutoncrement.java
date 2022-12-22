@@ -1,15 +1,22 @@
 package database.Column.Implements;
 
-import database.Column.AutoincrementColumn;
+import database.Column.atributes.AutoincrementColumn;
 import database.Column.DataTypes;
-import database.Column.PrimaryKeyColumn;
+import database.Column.atributes.PrimaryKeyColumn;
 import database.Column.TableColumn;
 
 public class PrimaryKeyAutoncrement
         extends Column
         implements PrimaryKeyColumn, AutoincrementColumn {
 
-    private final String templateForCreate = "`%1s` %2s primary key autoincrement";
+    /**
+     * Шаблон описания атрибутов колонки первичного автоинкрементируемого ключа
+     * <ul style="list-style-type: decimal">
+     *      <li>Наименование колонки</li>
+     *      <li>Тип колонки</li>
+     * </ul>
+     * */
+    private final String templateForCreate = "`%1$s` %2$s primary key autoincrement";
 
     public PrimaryKeyAutoncrement() {
         name = "id";

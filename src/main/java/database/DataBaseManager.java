@@ -87,7 +87,7 @@ public class DataBaseManager {
      * Функция отвечает за создание новой таблицы в БД
      */
     public void createTable(Table table, File db) throws SQLException {
-        DataBaseWrapper.createTable(table, table.getColumns(), conns.get(db));
+        DataBaseWrapper.createTable(table, conns.get(db));
     }
 
     /**
@@ -112,7 +112,7 @@ public class DataBaseManager {
             throws SQLException, ClassNotFoundException {
         List<HashMap<String, Object>> res = new LinkedList<>();
         ResultSet select = DataBaseWrapper.select(
-                table, null, null, getConnection(db), useSubRequest
+                table, null, getConnection(db), useSubRequest
         );
         while (select.next()) {
             HashMap<String, Object> contentValues = new HashMap<>();
@@ -216,14 +216,14 @@ public class DataBaseManager {
      * Функция возвращает выборку строк из таблицы
      */
     public List<LinkedHashMap<TableColumn, Object>> select(Table table,
-                                                           List<TableColumn> columns,
                                                            WhereValues where,
                                                            File db) throws SQLException {
-        ResultSet select = DataBaseWrapper.select(table, columns, where, conns.get(db), false);
+        ResultSet select = DataBaseWrapper.select(table, where, conns.get(db), false);
         List<LinkedHashMap<TableColumn, Object>> res = new LinkedList<>();
         while (select.next()) {
             LinkedHashMap<TableColumn, Object> row = new LinkedHashMap<>();
-            for (TableColumn tableColumn : columns) {
+            for (String columnName : table.getColumns().keySet()) {
+                TableColumn tableColumn = table.getColumns().get(columnName);
                 row.put(tableColumn, select.getObject(tableColumn.getName()));
             }
             res.add(row);

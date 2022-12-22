@@ -1,18 +1,21 @@
 package database;
 
-import database.Column.AutoincrementColumn;
-import database.Column.ForeignKey;
-import database.Column.PrimaryKeyColumn;
+import database.Column.atributes.AutoincrementColumn;
+import database.Column.atributes.ForeignKey;
+import database.Column.atributes.PrimaryKeyColumn;
 import database.Column.TableColumn;
 
 import java.io.File;
 import java.sql.*;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 
 /**
- * Класс представляет обертку работы с базой данных
+ * Класс представляет обертку команд для работы с базой данных
  *
  * @version 1.1
  */
@@ -44,7 +47,7 @@ public class DataBaseWrapper {
      */
     public static void beginTransaction(Connection conn,
                                         String transactionName) throws SQLException {
-        String comand = String.format("begin transaction%1s", ((transactionName != null) ? (" " + transactionName) : ("")));
+        String comand = String.format("begin transaction%1$s", ((transactionName != null) ? (" " + transactionName) : ("")));
         execute(conn, comand);
     }
 
@@ -56,7 +59,7 @@ public class DataBaseWrapper {
      */
     public static void clearTable(Connection conn,
                                   String tableName) throws SQLException {
-        String comand = "delete from `%1s`";
+        String comand = "delete from `%1$s`";
         execute(conn, String.format(comand, tableName));
     }
 
@@ -77,38 +80,46 @@ public class DataBaseWrapper {
      */
     public static void commitTransaction(Connection conn,
                                          String transactionName) throws SQLException {
-        String comand = String.format("commit%1s", ((transactionName != null) ? (" transaction " + transactionName) : ("")));
+        String comand = String.format("commit%1$s", ((transactionName != null) ? (" transaction " + transactionName) : ("")));
         execute(conn, comand);
     }
 
     /**
      * Функция создаёт таблицу в базе данных
      *
-     * @param tableName имя таблицы
-     * @param columns   объект-описание таблицы
+     * @param table имя таблицы
      * @param conn      Название базы данных
      */
-    public static void createTable(Table tableName,
-                                   List<TableColumn> columns,
+    public static void createTable(Table table,
                                    Connection conn) throws SQLException {
-        String com = "create table if not exists `%1s` (\n\t%2s\n\t)";
+        String com = "create table if not exists `%1$s` (\n\t%2$s\n\t)";
         StringBuilder res = new StringBuilder("");
-        columns.stream().forEach(column -> {
+        Map<String, TableColumn> columns = table.getColumns();
+
+        var columnCounter = new Object() {
+            int count = 0;
+            int amount = columns.size();
+        };
+
+        columns.keySet().stream().forEach(columnName -> {
+            TableColumn column = columns.get(columnName);
             res.append(column.comandForCreate());
-            if (columns.indexOf(column) != columns.size() - 1) {
+
+            if (columnCounter.count != columnCounter.amount - 1) {
                 res.append(", \n\t");
             }
+            columnCounter.count += 1;
         });
         res.append(" ");
-        if (tableName.hasUniques()) {
+        if (table.hasUniques()) {
             res.append(", \n\t");
-            res.append(tableName.getConstrainsUnique());
+            res.append(table.getConstrainsUnique());
         }
-        if (tableName.hasForeignKeys()) {
+        if (table.hasForeignKeys()) {
             res.append(", \n\t");
-            res.append(tableName.getConstrainsForeignKey());
+            res.append(table.getConstrainsForeignKey());
         }
-        execute(conn, String.format(com, tableName.getName(), res.toString()));
+        execute(conn, String.format(com, table.getName(), res.toString()));
     }
 
     /**
@@ -120,10 +131,10 @@ public class DataBaseWrapper {
     public static void delete(Connection conn,
                               Table table,
                               WhereValues where) throws SQLException {
-        String templateComand = "delete from `%1s`";
+        String templateComand = "delete from `%1$s`";
         String comand = String.format(templateComand, table.getName());
         if (where != null) {
-            String templateWhere = "%1s where %2s";
+            String templateWhere = "%1$s where %2$s";
             comand = String.format(templateWhere, comand, where.toString());
         }
         execute(conn, comand);
@@ -139,7 +150,7 @@ public class DataBaseWrapper {
     public static void deleteColumn(String tableName,
                                     TableColumn tableColumn,
                                     Connection conn) throws SQLException {
-        String template = "alter table `%1s` drop `%2s`";
+        String template = "alter table `%1$s` drop `%2$s`";
         execute(conn, String.format(template, tableName, tableColumn.getName()));
     }
 
@@ -161,7 +172,7 @@ public class DataBaseWrapper {
      * @param conn  Соединение с БД
      */
     public static void dropTable(Table table, Connection conn) throws SQLException {
-        String comand = "drop table `%1s`";
+        String comand = "drop table `%1$s`";
         execute(conn, String.format(comand, table.getName()));
     }
 
@@ -205,7 +216,7 @@ public class DataBaseWrapper {
     public static void insert(Table tableName,
                               ContentValues content,
                               Connection conn) throws SQLException {
-        String template = "insert into `%1s` %2s";
+        String template = "insert into `%1$s` %2$s";
         execute(conn, String.format(template, tableName.getName(), content.toStringInsert()));
     }
 
@@ -219,7 +230,7 @@ public class DataBaseWrapper {
     public static void renameTable(String oldName,
                                    String newName,
                                    Connection conn) throws SQLException {
-        String comand = "alter table %1s rename to %2s";
+        String comand = "alter table `%1$s` rename to `%2$s`";
         execute(conn, String.format(comand, oldName, newName));
     }
 
@@ -230,8 +241,8 @@ public class DataBaseWrapper {
                                     TableColumn oldTableColumn,
                                     TableColumn newTableColumn,
                                     Connection conn) throws SQLException {
-        String template = "alter table `%1s` rename column '%2s' to %3s";
-        execute(conn, String.format(template, tableName, oldTableColumn.getName().trim(), "'" + newTableColumn.getName().trim()) + "'");
+        String template = "alter table `%1$s` rename column '%2$s' to `%3$s`";
+        execute(conn, String.format(template, tableName, oldTableColumn.getName().trim(), newTableColumn.getName().trim()));
     }
 
     /**
@@ -239,7 +250,7 @@ public class DataBaseWrapper {
      */
     public static void rollbackSavepoint(Connection conn,
                                          String savepointName) throws SQLException {
-        String comand = String.format("rollback%1s", ((savepointName != null) ? (" to savepoint " + savepointName) : ("")));
+        String comand = String.format("rollback%1$s", ((savepointName != null) ? (" to savepoint " + savepointName) : ("")));
         execute(conn, comand);
     }
 
@@ -248,7 +259,7 @@ public class DataBaseWrapper {
      */
     public static void rollbackTransaction(Connection conn,
                                            String transactionName) throws SQLException {
-        String comand = String.format("rollback%1s", ((transactionName != null) ? (" transaction " + transactionName) : ("")));
+        String comand = String.format("rollback%1$s", ((transactionName != null) ? (" transaction " + transactionName) : ("")));
         execute(conn, comand);
     }
 
@@ -257,7 +268,7 @@ public class DataBaseWrapper {
      */
     public static void savepointTransaction(Connection conn,
                                             String savepointName) throws SQLException {
-        String comand = String.format("savepoint%1s", ((savepointName == null) ? ("") : (" " + savepointName)));
+        String comand = String.format("savepoint%1$s", ((savepointName == null) ? ("") : (" " + savepointName)));
         execute(conn, comand);
     }
 
@@ -269,19 +280,17 @@ public class DataBaseWrapper {
      * @return объект ResultSet
      */
     public static ResultSet select(Table table,
-                                   List<TableColumn> columns,
                                    WhereValues where,
                                    Connection conn,
                                    boolean useSubRequest) throws SQLException {
         if (useSubRequest) {
-            return selectWithSubrequest(table, columns, where, conn);
+            return selectWithSubrequest(table, where, conn);
         } else {
-            return selectWithoutSubrequest(table, columns, where, conn);
+            return selectWithoutSubrequest(table, where, conn);
         }
     }
 
     private static ResultSet selectWithoutSubrequest(Table table,
-                                                     List<TableColumn> columns,
                                                      WhereValues where,
                                                      Connection conn) throws SQLException {
 
@@ -290,13 +299,23 @@ public class DataBaseWrapper {
         String templateComand = "select %1s \nfrom `%2s`";
 
         //Определяем столбцы для запроса в БД
-        if (columns == null) columns = table.getColumns();
+        Map<String, TableColumn> columns = table.getColumns();
         StringBuilder column = new StringBuilder("");
-        for (TableColumn tableColumn : columns) {
+        Set<String> columnNames = columns.keySet();
+
+        var columnCounter = new Object(){
+            int count = 0;
+            int amount = columns.size();
+        };
+
+        for (String columnName : columnNames) {
+            TableColumn tableColumn = columns.get(columnName);
             column.append(tableColumn.getName());
-            if (columns.indexOf(tableColumn) != columns.size() - 1) {
+
+            if (columnCounter.count < columnCounter.amount - 1) {
                 column.append(", ");
             }
+            columnCounter.count += 1;
         }
 
         String comand = String.format(templateComand, column.toString(), table.getName());
@@ -314,39 +333,45 @@ public class DataBaseWrapper {
     }
 
     private static ResultSet selectWithSubrequest(Table table,
-                                                  List<TableColumn> columns,
                                                   WhereValues where,
                                                   Connection conn) throws SQLException {
         ResultSet result = null;
 
-        String templateComand = "select %1s \nfrom `%2s`";
+        String templateComand = "select %1$s \nfrom `%2$s`";
         String templateFullName = "\"%1s\".`%2s`";
         String templateAs = "`%1s` as `%2s`";
         String templateSqlName = "`%1s`";
         //Определяем столбцы для запроса в БД
         //Если требуемые колонки не переданы, запрашиваем все колонки из таблицы
-        if (columns == null) columns = table.getColumns();
+        Map<String, TableColumn> columns = table.getColumns();
 
         StringBuilder column = new StringBuilder("");
         //Проходим по всем колонкам для проверки
-        for (TableColumn col : columns) {
+
+        Set<String> columnNames = columns.keySet();
+
+        var columnCounter = new Object() {
+            int count = 0;
+            int amount = columns.size();
+        };
+
+        for (String columnName : columnNames) {
+            TableColumn col = columns.get(columnName);
             if (col instanceof ForeignKey) {
                 TableColumn foreignKeyColumn = ((ForeignKey)col).getForeignKey();
                 StringBuilder subRequest = new StringBuilder("");
                 /*
                  * Наименование таблицы формируется следующим образом.
                  * Если наименование текущей таблицы совпадает добавляем к наименованию "sub_"*/
-                String selectTemplate = "select %1s from %2s where %3s";
-                Table foreignKeyTable = new Table().copy(foreignKeyColumn.getTable());
-                String pseudoName;
+                String selectTemplate = "select %1$s from %2$s where %3$s";
+                Table fKTable = new Table().copy(foreignKeyColumn.getTable());
+                String pseudoName = fKTable.getName();;
                 //Переменная для определения внешнего ключа на саму себя
-                boolean foreignKeySelf = foreignKeyTable.getName().equals(table.getName());
+                boolean foreignKeySelf = fKTable.getName().equals(table.getName());
                 if (foreignKeySelf) {
-                    pseudoName = "sub_".concat(foreignKeyTable.getName());
-                } else {
-                    pseudoName = foreignKeyTable.getName();
+                    pseudoName = "sub_".concat(fKTable.getName());
                 }
-                TableColumn fkTableColId = foreignKeyTable.getPrimaryKeyColumn();
+                TableColumn fkTableColId = fKTable.getPrimaryKeyColumn();
                 //Ветка выполняется при наличии ссылки на внешнюю таблицу
                 if (foreignKeyColumn instanceof AutoincrementColumn) {
                     //Внешний ключ ссылается на автоинкрементируемый первичный ключ внешней таблицы
@@ -354,27 +379,33 @@ public class DataBaseWrapper {
                      * select "выбираем все колонки внешней таблицы кроме ID" from fkTable where fk.id = fk_id
                      * Подзапросы должны формироваться для каждой колонки ОТДЕЛЬНО!!!*/
                     //Определяем колонки для вывода информации
-                    List<TableColumn> collect = foreignKeyTable.getColumns()
-                            .stream()
-                            .filter(column1 -> !(column1 instanceof PrimaryKeyColumn))
-                            .collect(Collectors.toList());
+
+                    var fkColumnCounter = new Object() {
+                      int count = 0;
+                      int amount = fKTable.getColumns().size();
+                    };
 
                     //Формируем подзапрос для каждого столбца
-                    for (TableColumn columnForeignKeyTable : collect) {
+                    for (String fkColumnName : fKTable.getColumns().keySet()) {
+                        TableColumn columnFkTable = fKTable.getColumns().get(fkColumnName);
+
+                        if (columnFkTable instanceof PrimaryKeyColumn) continue;
+
                         subRequest.append("(");
                         subRequest.append(
                                 String.format(
                                         selectTemplate,
-                                        String.format(templateSqlName), columnForeignKeyTable.getName(),    //Наименование колонки внешней таблицы
-                                        (!foreignKeySelf) ? (String.format(templateSqlName, pseudoName)) : (String.format(templateAs, foreignKeyTable.getName(), pseudoName)),  //Наименование внешней таблицы
+                                        String.format(templateSqlName), columnFkTable.getName(),    //Наименование колонки внешней таблицы
+                                        (!foreignKeySelf) ? (String.format(templateSqlName, pseudoName)) : (String.format(templateAs, fKTable.getName(), pseudoName)),  //Наименование внешней таблицы
                                         String.format(templateFullName, pseudoName, foreignKeyColumn.getName()) + " = " + String.format(templateFullName, col.getTable().getName(), col.getName()) //Блок WHERE
                                 )
                         );
                         subRequest.append(") as ");
-                        subRequest.append(columnForeignKeyTable.getName());
-                        if (collect.indexOf(columnForeignKeyTable) != collect.size() - 1) {
+                        subRequest.append(columnFkTable.getName());
+                        if (fkColumnCounter.count < fkColumnCounter.amount - 1) {
                             subRequest.append(", \n");
                         }
+                        fkColumnCounter.count += 1;
                     }
                 } else {
                     //Внешний ключ ссылается на кастомную колонку внешней таблицы
@@ -384,7 +415,7 @@ public class DataBaseWrapper {
                     subRequest.append(String.format(
                             selectTemplate,
                             String.format(templateSqlName, foreignKeyColumn.getName()),
-                            (!foreignKeySelf) ? (String.format(templateSqlName, pseudoName)) : (String.format(templateAs, foreignKeyTable.getName(), pseudoName)),
+                            (!foreignKeySelf) ? (String.format(templateSqlName, pseudoName)) : (String.format(templateAs, fKTable.getName(), pseudoName)),
                             String.format(templateFullName, pseudoName, fkTableColId.getName()) + " = " + String.format(templateFullName, col.getTable().getName(), col.getName())
                     ));
                     if (col.getName().startsWith("fk_")) {
@@ -403,15 +434,18 @@ public class DataBaseWrapper {
                 //Колонка не содержит внешнего ключа
                 column.append(String.format(templateSqlName, col.getName()));
             }
-            if (columns.indexOf(col) != columns.size() - 1) {
+
+            if (columnCounter.count < columnCounter.amount - 1) {
                 column.append(", \n");
             }
+
+            columnCounter.count += 1;
         }
 
         String comand = String.format(templateComand, column.toString(), table.getName());
 
         if (where != null) {
-            String templateWhere = "%1s where %2s";
+            String templateWhere = "%1$s where %2$s";
             comand = String.format(templateWhere, comand, where.toString());
         }
 
@@ -433,10 +467,10 @@ public class DataBaseWrapper {
                               WhereValues where,
                               Connection conn) throws SQLException {
         //Заготовка SQL-команды
-        String templateComand = "update `%1s` set %2s";
+        String templateComand = "update `%1$s` set %2$s";
         String comand = String.format(templateComand, table.getName(), contentValues.toStringUpdate());
         if (where != null) {
-            String templateWhere = "%1s where %2s";
+            String templateWhere = "%1$s where %2$s";
             comand = String.format(templateWhere, comand, where.toString());
         }
         execute(conn, comand);

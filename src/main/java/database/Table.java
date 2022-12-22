@@ -1,6 +1,10 @@
 package database;
 
 import database.Column.*;
+import database.Column.atributes.ForeignKey;
+import database.Column.atributes.NotNull;
+import database.Column.atributes.PrimaryKeyColumn;
+import database.Column.atributes.Unique;
 
 import java.util.*;
 
@@ -10,8 +14,30 @@ import java.util.*;
  */
 public class Table {
 
-    private final String UNIQ_CONSTR = "constraint `%1s_%2s_uniq` unique(%3s)";
-    private final String FK_CONSTR = "constraint `%1s_%2s_fk` foreign key (%3s) references `%4s` (%5s)";
+    /**
+     * Шаблон строки для формирования ограничения на уникальность колонок.
+     * Ограничение принимает имя <b>`table_name`_`column_name`_uniq</b>.
+     * <br>
+     * Принимаемые аргументы:
+     * <ul style="list-style-type: decimal">
+     *     <li>Наименование таблицы</li>
+     *     <li>Наименование колонки</li>
+     * </ul>
+     */
+    private final String UNIQ_CONSTR = "constraint `%1$s_%2$s_uniq` unique(`%2$s`)";
+    /**
+     * Шаблон строки для формирования ограничения на внешние ключи.
+     * Ограничение принимает имя <b>`table_name`_`column_name`_`fk_table_name`_`fk_column_name`_fk</b>.
+     * <br>
+     * Принимаемые аргументы:
+     * <ul style="list-style-type: decimal">
+     *     <li>Наименование таблицы</li>
+     *     <li>Наименование колонки</li>
+     *     <li>Наименование внешней таблицы</li>
+     *     <li>Наименование внешней колонки</li>
+     * </ul>
+     */
+    private final String FK_CONSTR = "constraint `%1$s_%2$s_%3$s_%4$s_fk` foreign key (`%2$s`) references `%3$s` (`%4$s`)";
 
     /**
      * Наименование таблицы
@@ -31,25 +57,26 @@ public class Table {
     /**
      * Список столбцов
      */
-    protected final List<TableColumn> columns = new LinkedList<>();
+    protected final Map<String, TableColumn> columns = new HashMap<>();
 
     /**
      * Список столбцов для ограничения UNIQUE
      */
-    protected final List<TableColumn> uniqueColumns = new LinkedList<>();
+    protected final Map<String, TableColumn> uniqueColumns = new HashMap<>();
 
     /**
      * Список столбцов для ограничения NOT NULL
      */
-    protected final List<TableColumn> notNullColumns = new LinkedList<>();
+    protected final Map<String, TableColumn> notNullColumns = new HashMap<>();
 
     /**
-     * Список для ограничения FOREIGN KEY
-     * Ключом является колонка текущей таблицы, значение - внешняя таблица
+     * Список для ограничения FOREIGN KEY.
+     * Key = колонка ТЕКУЩЕЙ таблицы; value = Колонка на которую делается ссылка.
      */
-    protected final Map<TableColumn, TableColumn> foreignKeysColumns = new HashMap<>();
+    protected final Map<TableColumn, TableColumn> fkColumns = new HashMap<>();
 
-    public Table() {  }
+    public Table() {
+    }
 
     /**
      * Функция отвечает за добавление новой колонки в описание таблицы.
@@ -59,25 +86,20 @@ public class Table {
      */
     public boolean addColumn(TableColumn column) {
         boolean res = false;
-        boolean colPresent = columns
-                .stream()
-                .anyMatch(column1 -> column1.getName().equals(column.getName()));
-        if (!colPresent) {
-            columns.add(column);
+        if (!columns.containsKey(column.getName())) {
+            columns.put(column.getName(), column);
             column.setTable(this);
             res = true;
         }
 
-        if (column instanceof NotNull) {
-            if (((NotNull) column).isNotNull() && !notNullColumns.contains(column)) notNullColumns.add(column);
-        }
-        if (column instanceof Unique) {
-            if (((Unique) column).isUnique() && !uniqueColumns.contains(column)) uniqueColumns.add(column);
-        }
-        if (column instanceof ForeignKey) {
-            if (((ForeignKey) column).getForeignKey() != null)
-                foreignKeysColumns.put(column, ((ForeignKey) column).getForeignKey());
-        }
+        if (column instanceof NotNull && ((NotNull) column).isNotNull() && !notNullColumns.containsKey(column.getName()))
+            notNullColumns.put(column.getName(), column);
+
+        if (column instanceof Unique && ((Unique) column).isUnique() && !uniqueColumns.containsKey(column.getName()))
+            uniqueColumns.put(column.getName(), column);
+
+        if (column instanceof ForeignKey && ((ForeignKey) column).getForeignKey() != null)
+            fkColumns.put(column, ((ForeignKey) column).getForeignKey());
 
         return res;
     }
@@ -91,8 +113,8 @@ public class Table {
         this.name = copyTable.getName();
         this.type = copyTable.getType();
 
-        for (TableColumn column : copyTable.getColumns()) {
-            addColumn(column);
+        for (String columnNames : copyTable.getColumns().keySet()) {
+            addColumn(copyTable.getColumns().get(columnNames));
         }
 
         for (ContentValues row : copyTable.getContentValues()) {
@@ -109,34 +131,37 @@ public class Table {
         return this;
     }
 
-    public List<TableColumn> getColumns() {
+    public Map<String, TableColumn> getColumns() {
         return columns;
     }
 
     public String getConstrainsForeignKey() {
         StringBuilder res = new StringBuilder("");
-        if (!foreignKeysColumns.keySet().isEmpty()) {
+        if (!fkColumns.keySet().isEmpty()) {
 
-            ArrayList<TableColumn> tableColumns = new ArrayList(foreignKeysColumns.keySet());
+            var fkColumnCounter = new Object() {
+                int count = 0;
+                int amount = fkColumns.size();
+            };
 
-            for (TableColumn column : tableColumns) {
-                Table foreignKeyTable = foreignKeysColumns.get(column).getTable();
+            for (TableColumn column : fkColumns.keySet()) {
+                Table foreignKeyTable = fkColumns.get(column).getTable();
                 // Определяем наименование колонки первичного ключа внешней таблицы
                 String foreignKeyPrimaryKey = foreignKeyTable.getPrimaryKeyColumn().getName();
 
                 res.append(String.format(
-                        FK_CONSTR,
-                        name,                                   //1
-                        foreignKeyTable.getName(),              //2
-                        "`" + column.getName() + "`",           //3
-                        foreignKeyTable.getName(),              //4
-                        "`" + foreignKeyPrimaryKey + "`"        //5
+                                FK_CONSTR,
+                                name,                       //1
+                                column.getName(),           //2
+                                foreignKeyTable.getName(),  //3
+                                foreignKeyPrimaryKey        //4
                         )
                 );
 
-                if (tableColumns.indexOf(column) != tableColumns.size() - 1) {
+                if (fkColumnCounter.count < fkColumnCounter.amount - 1) {
                     res.append(", \n\t");
                 }
+                fkColumnCounter.count += 1;
             }
         }
         return res.toString().trim();
@@ -144,14 +169,22 @@ public class Table {
 
     /**
      * @return строка со всеми именовынными ограничениями по уникальности
-     * */
+     */
     public String getConstrainsUnique() {
         StringBuilder res = new StringBuilder("");
-        for (TableColumn column : uniqueColumns) {
-            res.append(String.format(UNIQ_CONSTR, this.name, column.getName().trim(), "`" + column.getName().trim() + "`"));
-            if (uniqueColumns.indexOf(column) != uniqueColumns.size() - 1) {
+        var uniqueColumnCounter = new Object() {
+            int count = 0;
+            int amount = uniqueColumns.size();
+        };
+        for (String columnName : uniqueColumns.keySet()) {
+            TableColumn column = uniqueColumns.get(columnName);
+
+            res.append(String.format(UNIQ_CONSTR, this.name, column.getName().trim()));
+
+            if (uniqueColumnCounter.count < uniqueColumnCounter.amount - 1) {
                 res.append(", \n\t");
             }
+            uniqueColumnCounter.count += 1;
         }
         return res.toString().trim();
     }
@@ -168,7 +201,15 @@ public class Table {
      * @return колонка - первичный ключ.
      */
     public PrimaryKeyColumn getPrimaryKeyColumn() {
-        return (PrimaryKeyColumn) (columns.stream().filter(column -> column instanceof PrimaryKeyColumn).findFirst().get());
+        PrimaryKeyColumn res = null;
+        for (String columnName : columns.keySet()) {
+            TableColumn column = columns.get(columnName);
+            if (column instanceof PrimaryKeyColumn) {
+                res = (PrimaryKeyColumn) column;
+                break;
+            }
+        }
+        return res;
     }
 
     /**
@@ -179,15 +220,7 @@ public class Table {
     }
 
     public TableColumn getColumnByName(Table table, String colName) {
-        Optional<TableColumn> first = table.getColumns()
-                .stream()
-                .filter(column -> column.getName().equals(colName))
-                .findFirst();
-        if (first.isPresent()) {
-            return first.get();
-        } else {
-            return null;
-        }
+        return table.getColumns().get(colName);
     }
 
     public String getType() {
@@ -195,7 +228,7 @@ public class Table {
     }
 
     public boolean hasForeignKeys() {
-        return !foreignKeysColumns.isEmpty();
+        return !fkColumns.isEmpty();
     }
 
     public boolean hasUniques() {
@@ -205,17 +238,16 @@ public class Table {
     public boolean removeColumn(TableColumn column) {
         boolean res = false;
 
-        if (columns.contains(column)) {
+        if (columns.containsKey(column)) {
             columns.remove(column);
             res = true;
         }
 
-        if (column instanceof NotNull) {
-            if (((NotNull) column).isNotNull() && notNullColumns.contains(column)) notNullColumns.remove(column);
-        }
-        if (column instanceof Unique) {
-            if (((Unique) column).isUnique() && uniqueColumns.contains(column)) uniqueColumns.remove(column);
-        }
+        if (column instanceof NotNull && ((NotNull) column).isNotNull() && notNullColumns.containsKey(column))
+            notNullColumns.remove(column);
+
+        if (column instanceof Unique && ((Unique) column).isUnique() && uniqueColumns.containsKey(column))
+            uniqueColumns.remove(column);
 
         return res;
     }

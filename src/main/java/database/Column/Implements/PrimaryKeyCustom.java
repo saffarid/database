@@ -1,13 +1,20 @@
 package database.Column.Implements;
 
 import database.Column.DataTypes;
-import database.Column.PrimaryKeyColumn;
+import database.Column.atributes.PrimaryKeyColumn;
 
 public class PrimaryKeyCustom
         extends Column
         implements PrimaryKeyColumn {
 
-    private String templateForCreate = "`%1s` %2s primary key";
+    /**
+     * Шаблон описания атрибутов колонки первичного ключа
+     * <ul style="list-style-type: decimal">
+     *      <li>Наименование колонки</li>
+     *      <li>Тип колонки</li>
+     * </ul>
+     * */
+    private String templateForCreate = "`%1$s` %2$s primary key";
 
     public PrimaryKeyCustom() {
         name = "id";

@@ -1,15 +1,13 @@
 package database;
 
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 public abstract class DataBaseSQL {
 
     /**
      * Список таблиц
      * */
-    protected final List<Table> tables = new LinkedList<>();
+    protected final Map<String, Table> tables = new HashMap<>();
 
     public DataBaseSQL() {  }
 
@@ -19,15 +17,10 @@ public abstract class DataBaseSQL {
      * @see Table
      * */
     public Table getTable(String name){
-        Optional<Table> first = tables
-                .stream()
-                .filter(table -> table.getName().equals(name))
-                .findFirst();
-        if(first.isPresent()) return first.get();
-        else return null;
+        return tables.get(name);
     }
 
-    public List<Table> getTables() {
+    public Map<String, Table> getTables() {
         return tables;
     }
 }
