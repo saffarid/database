@@ -65,7 +65,7 @@ public class ContentValues extends HashMap<TableColumn, Object> {
     /**
      * Функция формирует строки подзапросов для использования в блоке values запроса Insert
      */
-    private String getValueSubrequest(ForeignKey column, Object value) {
+    protected String getValueSubrequest(ForeignKey column, Object value) {
         TableColumn foreignKey = column.getForeignKey();
         //Если внешний ключ установлен, объект не будет равен null
         if (foreignKey == null) return null;

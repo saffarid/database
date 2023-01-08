@@ -92,34 +92,35 @@ public class DataBaseWrapper {
      */
     public static void createTable(Table table,
                                    Connection conn) throws SQLException {
-        String com = "create table if not exists `%1$s` (\n\t%2$s\n\t)";
-        StringBuilder res = new StringBuilder("");
-        Map<String, TableColumn> columns = table.getColumns();
-
-        var columnCounter = new Object() {
-            int count = 0;
-            int amount = columns.size();
-        };
-
-        columns.keySet().stream().forEach(columnName -> {
-            TableColumn column = columns.get(columnName);
-            res.append(column.comandForCreate());
-
-            if (columnCounter.count != columnCounter.amount - 1) {
-                res.append(", \n\t");
-            }
-            columnCounter.count += 1;
-        });
-        res.append(" ");
-        if (table.hasUniques()) {
-            res.append(", \n\t");
-            res.append(table.getConstrainsUnique());
-        }
-        if (table.hasForeignKeys()) {
-            res.append(", \n\t");
-            res.append(table.getConstrainsForeignKey());
-        }
-        execute(conn, String.format(com, table.getName(), res.toString()));
+//        String com = "create table if not exists `%1$s` (\n\t%2$s\n\t)";
+//        StringBuilder res = new StringBuilder("");
+//        Map<String, TableColumn> columns = table.getColumns();
+//
+//        var columnCounter = new Object() {
+//            int count = 0;
+//            int amount = columns.size();
+//        };
+//
+//        columns.keySet().stream().forEach(columnName -> {
+//            TableColumn column = columns.get(columnName);
+//            res.append(column.comandForCreate());
+//
+//            if (columnCounter.count != columnCounter.amount - 1) {
+//                res.append(", \n\t");
+//            }
+//            columnCounter.count += 1;
+//        });
+//        res.append(" ");
+//        if (table.hasUniques()) {
+//            res.append(", \n\t");
+//            res.append(table.getConstrainsUnique());
+//        }
+//        if (table.hasForeignKeys()) {
+//            res.append(", \n\t");
+//            res.append(table.getConstrainsForeignKey());
+//        }
+//
+        execute(conn, RequestBuilder.create(table));
     }
 
     /**
@@ -211,13 +212,16 @@ public class DataBaseWrapper {
     /**
      * Функция осуществляет вставку данных в таблицу.
      *
-     * @param tableName имя таблицы в которую добавляют данные
+     * @param table имя таблицы в которую добавляют данные
+     * @param content добавляемая строка
+     * @param conn объект соединения с БД
      */
-    public static void insert(Table tableName,
+    public static void insert(Table table,
                               ContentValues content,
                               Connection conn) throws SQLException {
-        String template = "insert into `%1$s` %2$s";
-        execute(conn, String.format(template, tableName.getName(), content.toStringInsert()));
+//        String template = "insert into `%1$s` %2$s";
+//        execute(conn, String.format(template, table.getName(), content.toStringInsert()));
+        execute(conn, RequestBuilder.insert(table, content));
     }
 
     /**

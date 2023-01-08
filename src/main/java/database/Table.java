@@ -56,6 +56,19 @@ public class Table {
 
     /**
      * Список столбцов
+     *
+     * <table cellspacing="5">
+     *     <tr align="center">
+     *         <th>Key</th>
+     *         <th>Value</th>
+     *     </tr>
+     *     <tr>
+     *         <td>Наименование колонки</td>
+     *         <td>Объект TableColumn</td>
+     *     </tr>
+     * </table>
+     *
+     * @see TableColumn
      */
     protected final Map<String, TableColumn> columns = new HashMap<>();
 
