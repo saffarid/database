@@ -7,10 +7,7 @@ import database.Column.TableColumn;
 
 import java.io.File;
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 
@@ -132,13 +129,13 @@ public class DataBaseWrapper {
     public static void delete(Connection conn,
                               Table table,
                               WhereValues where) throws SQLException {
-        String templateComand = "delete from `%1$s`";
-        String comand = String.format(templateComand, table.getName());
-        if (where != null) {
-            String templateWhere = "%1$s where %2$s";
-            comand = String.format(templateWhere, comand, where.toString());
-        }
-        execute(conn, comand);
+//        String templateComand = "delete from `%1$s`";
+//        String comand = String.format(templateComand, table.getName());
+//        if (where != null) {
+//            String templateWhere = "%1$s where %2$s";
+//            comand = String.format(templateWhere, comand, where.toString());
+//        }
+        execute(conn, RequestBuilder.delete(table, where));
     }
 
     /**
@@ -306,6 +303,7 @@ public class DataBaseWrapper {
         Map<String, TableColumn> columns = table.getColumns();
         StringBuilder column = new StringBuilder("");
         Set<String> columnNames = columns.keySet();
+        
 
         var columnCounter = new Object(){
             int count = 0;
@@ -471,12 +469,12 @@ public class DataBaseWrapper {
                               WhereValues where,
                               Connection conn) throws SQLException {
         //Заготовка SQL-команды
-        String templateComand = "update `%1$s` set %2$s";
-        String comand = String.format(templateComand, table.getName(), contentValues.toStringUpdate());
-        if (where != null) {
-            String templateWhere = "%1$s where %2$s";
-            comand = String.format(templateWhere, comand, where.toString());
-        }
-        execute(conn, comand);
+//        String templateComand = "update `%1$s` set %2$s";
+//        String comand = String.format(templateComand, table.getName(), contentValues.toStringUpdate());
+//        if (where != null) {
+//            String templateWhere = "%1$s where %2$s";
+//            comand = String.format(templateWhere, comand, where.toString());
+//        }
+        execute(conn, RequestBuilder.update(table, contentValues, where));
     }
 }

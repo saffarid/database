@@ -3,12 +3,14 @@ package database;
 import database.Column.TableColumn;
 import database.Column.atributes.ForeignKey;
 
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 
 public class RequestBuilder {
 
     /**
-     * Шаблон команды для генерации команды создания новой таблицы.
+     * Шаблон для генерации команды создания новой таблицы.
      * <br>
      * Принимаемые аргументы:
      * <ul style="list-style-type: decimal">
@@ -19,7 +21,7 @@ public class RequestBuilder {
     private static final String CREATE_TEMPLATE = "create table if not exists `%1$s` (\n\t%2$s\n\t)";
 
     /**
-     * Шаблон команды для генерации команды вставки новых строк в таблицу.
+     * Шаблон для генерации команды вставки новых строк в таблицу.
      * <br>
      * Принимаемые аргументы:
      * <ul style="list-style-type: decimal">
@@ -31,7 +33,49 @@ public class RequestBuilder {
     private static final String INSERT_TEMPLATE = "insert into `%1$s` (\n\t%2$s\n) values (\n\t%3$s)";
 
     /**
-     * Функция формирует запрос к БД на создание таблицы
+     * Шаблон для генерации команды обновления строк в таблице
+     * <br>
+     * Принимаемые аргументы:
+     * <ul style="list-style-type: decimal">
+     *     <li>Наименование таблицы</li>
+     *     <li>Строка с обновляемыми данными</li>
+     * </ul>
+     */
+    private static final String UPDATE_TEMPLATE = "update `%1$s` set %2$s";
+
+    /**
+     * Шаблон для генерации команды удаления строк из таблицы
+     * <br>
+     * Принимаемые аргументы:
+     * <ul style="list-style-type: decimal">
+     *     <li>Наименование таблицы</li>
+     * </ul>
+     */
+    private static final String DELETE_TEMPLATE = "delete from `%1$s`";
+
+    /**
+     * Шаблон для генерации команды выборки данных из таблицы
+     * <br>
+     * Принимаемые аргументы:
+     * <ul style="list-style-type: decimal">
+     *     <li>Список столбцов для вывода</li>
+     *     <li>Наименование таблицы</li>
+     * </ul>
+     */
+    private static final String SELECT_TEMPLATE = "select %1$s \nfrom `%2$s`";
+
+    /**
+     * Шаблон для генерации определённого условия
+     * <br>
+     * Принимаемые аргументы:
+     * <ul style="list-style-type: decimal">
+     *     <li>Условие</li>
+     * </ul>
+     */
+    private static final String WHERE_TEMPLATE = " where %1$s";
+
+    /**
+     * Функция генерирует команду запроса к БД на создание таблицы
      */
     public static String create(Table table) {
         StringBuilder res = new StringBuilder("");
@@ -42,15 +86,17 @@ public class RequestBuilder {
             int amount = columns.size();
         };
 
-        columns.keySet().stream().forEach(columnName -> {
-            TableColumn column = columns.get(columnName);
-            res.append(column.comandForCreate());
+        columns.keySet()
+               .stream()
+               .forEach(columnName -> {
+                   TableColumn column = columns.get(columnName);
+                   res.append(column.comandForCreate());
 
-            if (columnCounter.count != columnCounter.amount - 1) {
-                res.append(", \n\t");
-            }
-            columnCounter.count += 1;
-        });
+                   if (columnCounter.count != columnCounter.amount - 1) {
+                       res.append(", \n\t");
+                   }
+                   columnCounter.count += 1;
+               });
         res.append(" ");
         if (table.hasUniques()) {
             res.append(", \n\t");
@@ -63,10 +109,14 @@ public class RequestBuilder {
         return String.format(CREATE_TEMPLATE, table.getName(), res.toString());
     }
 
-    public static String insert(Table table, ContentValues content) {
+    /**
+     * Функция генерирует команду запроса к БД на вставку строк в таблицу
+     */
+    public static String insert(Table table,
+                                ContentValues content) {
 
         StringBuilder columns = new StringBuilder("");
-        StringBuilder values = new StringBuilder("");
+        StringBuilder values  = new StringBuilder("");
 
         //Шаблон наименования колонки
         String strColNameTemplate = "`%1$s`";
@@ -82,17 +132,19 @@ public class RequestBuilder {
         for (TableColumn column : content.keySet()) {
             Object value = content.get(column);
 
-            if (value == null) continue;
+            if (value == null) {continue;}
 
             //Проверяем TableColumn на наличие внешнего ключа
             if (column instanceof ForeignKey && ((ForeignKey) column).hasForeignKey()) {
                 //Колонка содержит внешний ключ
                 values.append(content.getValueSubrequest((ForeignKey) column, value));
-            } else {
+            }
+            else {
                 //Колонка не содержит внешний ключ
                 if (value instanceof String) {
                     values.append(String.format(strColValTemplate, value));
-                } else {
+                }
+                else {
                     values.append(value);
                 }
             }
@@ -103,15 +155,57 @@ public class RequestBuilder {
                 values.append(", \n\t");
             }
             columnCounter.count += 1;
-
         }
-
 
         return String.format(INSERT_TEMPLATE, table.getName(), columns, values);
     }
 
-    public static String update() {
-        StringBuilder update = new StringBuilder();
+    /**
+     * Функция генерирует команду запроса к БД на обновление строк в таблице
+     */
+    public static String update(Table table,
+                                ContentValues values,
+                                WhereValues where) {
+
+        String        TEMPLATE_COMAND_UPDATE = "`%1$s` = %2$s\n";
+        StringBuilder setSegment                    = new StringBuilder("");
+
+        var columnCounter = new Object() {
+            int count = 0;
+            int amount = values.size();
+        };
+
+        for (TableColumn column : values.keySet()) {
+
+            Object value = values.get(column);
+
+            if (value == null) {continue;}
+            if (column instanceof ForeignKey && ((ForeignKey) column).hasForeignKey()) {
+                setSegment.append(String.format(TEMPLATE_COMAND_UPDATE,
+                                         column.getName(),
+                                         values.getValueSubrequest((ForeignKey) column, value)));
+            }
+            else {
+                if (value instanceof String) {
+                    setSegment.append(String.format(TEMPLATE_COMAND_UPDATE, column.getName(), "\'" + value.toString() + "\'"));
+                }
+                else {
+                    setSegment.append(String.format(TEMPLATE_COMAND_UPDATE, column.getName(), value.toString()));
+                }
+            }
+
+            if (columnCounter.count != (columnCounter.amount - 1)) {
+                setSegment.append(", ");
+            }
+            columnCounter.count += 1;
+        }
+
+        StringBuilder update = new StringBuilder(String.format(UPDATE_TEMPLATE, table.getName(), values.toStringUpdate()));
+
+        if (where != null) {
+            update.append(String.format(WHERE_TEMPLATE, where.toString()));
+        }
+
         return update.toString();
     }
 
@@ -120,9 +214,16 @@ public class RequestBuilder {
         return select.toString();
     }
 
-    public static String remove() {
-        StringBuilder remove = new StringBuilder();
-        return remove.toString();
+    /**
+     * Функция генерирует команду запроса к БД на удаление строк в таблице
+     */
+    public static String delete(Table table,
+                                WhereValues where) {
+        StringBuilder delete = new StringBuilder(String.format(DELETE_TEMPLATE, table.getName()));
+        if (where != null) {
+            delete.append(String.format(WHERE_TEMPLATE, where.toString()));
+        }
+        return delete.toString();
     }
 
 }
